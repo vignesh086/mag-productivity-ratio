@@ -75,20 +75,8 @@ export function parseProductivityExcel(file) {
           // to avoid accidentally matching "Focus Factor (%)"
           const COL_ALLOC      = find('website') || find('voucher') || find('dsp') || find('ssci');
 
-          const missing = [];
-          if (!COL_MEMBER)   missing.push('Team Member');
-          if (!COL_CAPACITY) missing.push('Total Hours Available');
-          if (!COL_ESTIMATE) missing.push('Total Hours Committed / Total Original Estimate');
-
-          if (missing.length > 0) {
-            reject(
-              new Error(
-                `Sheet "${sheetName}" is missing required columns: ${missing.join(', ')}.\n` +
-                'Required: Team Member · Total Hours Available · Total Hours Committed / Total Original Estimate'
-              )
-            );
-            return;
-          }
+          // Skip sheets that don't look like sprint data (e.g. "Instructions", "Summary")
+          if (!COL_MEMBER || !COL_CAPACITY || !COL_ESTIMATE) continue;
 
           const SKIP_NAMES = /^(total|grand total|subtotal|average|sum)$/i;
 
