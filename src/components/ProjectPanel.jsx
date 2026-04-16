@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { BarChart2, TrendingUp, Users, Info } from 'lucide-react';
+import { BarChart2, TrendingUp, Users, Info, TableProperties } from 'lucide-react';
 import FileUpload from './FileUpload';
 import SprintFilter from './SprintFilter';
 import StatCard from './StatCard';
@@ -7,6 +7,7 @@ import MemberTable from './MemberTable';
 import MemberBarChart from './MemberBarChart';
 import TrendChart from './TrendChart';
 import AnalysisSummary from './AnalysisSummary';
+import SprintDetailView from './SprintDetailView';
 import {
   computeMemberStats,
   computeSprintTrend,
@@ -14,6 +15,7 @@ import {
 } from '../utils/excelParser';
 
 const VIEWS = [
+  { id: 'sprint', label: 'Sprint Detail', icon: TableProperties },
   { id: 'overview', label: 'Overview', icon: BarChart2 },
   { id: 'trend', label: 'Sprint Trend', icon: TrendingUp },
   { id: 'members', label: 'Member Breakdown', icon: Users },
@@ -29,7 +31,7 @@ export default function ProjectPanel({ project, onUpdate }) {
   const { id, data } = project;
   const { rows, sprints, members, selectedSprints, fileName } = data;
 
-  const [activeView, setActiveView] = useState('overview');
+  const [activeView, setActiveView] = useState('sprint');
   const [chartTab, setChartTab] = useState('overall');
 
   const filteredRows = useMemo(() => {
@@ -69,24 +71,40 @@ export default function ProjectPanel({ project, onUpdate }) {
       {!hasData && (
         <div className="flex gap-2 items-start p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <Info size={15} className="text-blue-500 shrink-0 mt-0.5" />
-          <div className="text-xs text-blue-700 space-y-1">
-            <p className="font-medium">Expected Excel format:</p>
-            <p>Columns: <code className="bg-blue-100 px-1 rounded">Member</code> | <code className="bg-blue-100 px-1 rounded">Sprint</code> | <code className="bg-blue-100 px-1 rounded">Original Estimate</code> | <code className="bg-blue-100 px-1 rounded">Available Capacity</code></p>
-            <p className="text-blue-600">Values in hours. One row per member per sprint.</p>
+          <div className="text-xs text-blue-700 space-y-1.5">
+            <p className="font-medium">Upload a Microsoft Excel (.xlsx) file.</p>
+            <p>Each <span className="font-semibold">sheet tab = one sprint</span> — the tab name is used as the sprint name.</p>
+            <p className="font-medium mt-1">Expected columns:</p>
+            <p className="leading-relaxed">
+              <code className="bg-blue-100 px-1 rounded">Team Member</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Role</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Total Days in Sprint</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Vacation / PTO (days)/Annual Leave</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Other Meetings / Duties (days)</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Focus Factor (%)</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Effective Days</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Hours/Day</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Total Hours Available</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">Total Hours Committed /Total Original Estimate</code>{' · '}
+              <code className="bg-blue-100 px-1 rounded">MH Website (%)</code>
+            </p>
+            <p className="text-blue-600">Required: Team Member · Total Hours Available · Total Hours Committed /Total Original Estimate</p>
           </div>
         </div>
       )}
 
       {hasData && (
         <>
-          {/* Sprint filter */}
-          <div>
-            <SprintFilter
-              sprints={sprints}
-              selectedSprints={selectedSprints}
-              onChange={(val) => onUpdate(id, { selectedSprints: val })}
-            />
-          </div>
+          {/* Sprint filter – shown on all views except Sprint Detail (which has its own navigator) */}
+          {activeView !== 'sprint' && (
+            <div>
+              <SprintFilter
+                sprints={sprints}
+                selectedSprints={selectedSprints}
+                onChange={(val) => onUpdate(id, { selectedSprints: val })}
+              />
+            </div>
+          )}
 
           {/* View tabs */}
           <div className="flex gap-1 border-b border-gray-200">
@@ -104,6 +122,11 @@ export default function ProjectPanel({ project, onUpdate }) {
               </button>
             ))}
           </div>
+
+          {/* SPRINT DETAIL */}
+          {activeView === 'sprint' && (
+            <SprintDetailView rows={rows} sprints={sprints} />
+          )}
 
           {/* OVERVIEW */}
           {activeView === 'overview' && (

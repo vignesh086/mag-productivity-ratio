@@ -76,7 +76,7 @@ export default function App() {
           </div>
           <div>
             <h1 className="text-base font-bold text-gray-900 leading-none">
-              Productivity Ratio Dashboard
+              MAG Productivity Ratio Dashboard
             </h1>
             <p className="text-xs text-gray-500 mt-0.5">
               Original Estimate ÷ Available Capacity

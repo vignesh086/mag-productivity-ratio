@@ -1,5 +1,4 @@
 import RatioGauge from './RatioGauge';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 function StatusBadge({ ratio }) {
   if (ratio >= 0.9 && ratio <= 1.1)
@@ -16,12 +15,17 @@ function StatusBadge({ ratio }) {
 export default function MemberTable({ stats }) {
   if (!stats || stats.length === 0) return null;
 
+  const hasRoles = stats.some((s) => s.role);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200">
             <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Member</th>
+            {hasRoles && (
+              <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
+            )}
             <th className="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimate (h)</th>
             <th className="text-right py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Capacity (h)</th>
             <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-48">Productivity Ratio</th>
@@ -32,6 +36,9 @@ export default function MemberTable({ stats }) {
           {stats.map((row) => (
             <tr key={row.member} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
               <td className="py-2.5 px-3 font-medium text-gray-800">{row.member}</td>
+              {hasRoles && (
+                <td className="py-2.5 px-3 text-gray-500 text-xs">{row.role || '—'}</td>
+              )}
               <td className="py-2.5 px-3 text-right text-gray-600">{row.totalEstimate.toFixed(1)}</td>
               <td className="py-2.5 px-3 text-right text-gray-600">{row.totalCapacity.toFixed(1)}</td>
               <td className="py-2.5 px-3">
