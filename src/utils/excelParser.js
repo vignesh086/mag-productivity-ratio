@@ -3,25 +3,24 @@ import * as XLSX from 'xlsx';
 /**
  * Excel structure:
  *   - Each SHEET (tab) = one sprint; the sheet name is used as the sprint name.
- *   - Columns (flexible case-insensitive partial matching):
- *       Team Member                              → member
- *       Role                                     → role
- *       Total Days in Sprint                     → totalDays
- *       Vacation / PTO (days) / Annual Leave     → pto
- *       Other Meetings / Duties (days)           → otherMeetings
- *       Focus Factor (%)                         → focusFactor
- *       Effective Days                           → effectiveDays
- *       Hours/Day                                → hoursPerDay
- *       Total Hours Available                    → availableCapacity  ← CAPACITY
- *       Total Hours Committed / Total Original Estimate → originalEstimate ← ESTIMATE
- *       MH Website (%) or similar project %      → projectAllocPct
- *       Project                                  → projectName
- *       Notes                                    → notes
+ *   - Exact columns (matched case-insensitively by partial key):
+ *       Team Member                                        → member
+ *       Role                                               → role
+ *       Total Days in Sprint                               → totalDays
+ *       Vacation / PTO (days)/Annual Leave                 → pto
+ *       Other Meetings / Duties (days)                     → otherMeetings
+ *       Focus Factor (%)                                   → focusFactor
+ *       Effective Days                                     → effectiveDays
+ *       Hours/Day                                          → hoursPerDay
+ *       Total Hours Available                              → availableCapacity  ← CAPACITY
+ *       Total Hours Committed /Total Original Estimate     → originalEstimate   ← ESTIMATE
+ *       (empty column – ignored)
+ *       MH Website (%) / MH Voucher (%) / DSP (%) etc.    → projectAllocPct
  *
  * Returns an array of row objects:
  *   { member, role, sprint, originalEstimate, availableCapacity,
  *     totalDays, pto, otherMeetings, focusFactor, effectiveDays,
- *     hoursPerDay, projectName, notes, projectAllocPct }
+ *     hoursPerDay, projectAllocPct }
  */
 export function parseProductivityExcel(file) {
   return new Promise((resolve, reject) => {
@@ -72,10 +71,9 @@ export function parseProductivityExcel(file) {
           const COL_FOCUS      = find('focus factor');
           const COL_EFF_DAYS   = find('effective days');
           const COL_HRS_DAY    = find('hours/day') || find('hrs/day');
-          const COL_PROJECT    = find('project');
-          const COL_NOTES      = find('notes');
-          // Project allocation % – e.g. "MH Website (%)" — avoid matching "Focus Factor (%)"
-          const COL_ALLOC      = find('website') || find('voucher') || find('dsp');
+          // Project allocation % – e.g. "MH Website (%)" — use project-name terms
+          // to avoid accidentally matching "Focus Factor (%)"
+          const COL_ALLOC      = find('website') || find('voucher') || find('dsp') || find('ssci');
 
           const missing = [];
           if (!COL_MEMBER)   missing.push('Team Member');
@@ -116,8 +114,6 @@ export function parseProductivityExcel(file) {
               focusFactor:     COL_FOCUS      ? parseFloat(r[COL_FOCUS]) || null         : null,
               effectiveDays:   COL_EFF_DAYS   ? parseFloat(r[COL_EFF_DAYS]) || null      : null,
               hoursPerDay:     COL_HRS_DAY    ? parseFloat(r[COL_HRS_DAY]) || null       : null,
-              projectName:     COL_PROJECT    ? String(r[COL_PROJECT] || '').trim()      : '',
-              notes:           COL_NOTES      ? String(r[COL_NOTES] || '').trim()        : '',
               projectAllocPct: COL_ALLOC      ? parseFloat(r[COL_ALLOC]) || null         : null,
             });
           }

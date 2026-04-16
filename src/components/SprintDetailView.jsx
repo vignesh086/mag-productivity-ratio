@@ -42,7 +42,6 @@ export default function SprintDetailView({ rows, sprints }) {
   const showHrsDay       = has('hoursPerDay');
   const showRole         = has('role');
   const showAllocPct     = has('projectAllocPct');
-  const showNotes        = has('notes');
 
   const totalEstimate  = sprintRows.reduce((s, r) => s + r.originalEstimate, 0);
   const totalCapacity  = sprintRows.reduce((s, r) => s + r.availableCapacity, 0);
@@ -126,7 +125,6 @@ export default function SprintDetailView({ rows, sprints }) {
               {showAllocPct   && <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Alloc %</th>}
               <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-32">Productivity</th>
               <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-              {showNotes      && <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</th>}
             </tr>
           </thead>
           <tbody>
@@ -153,7 +151,6 @@ export default function SprintDetailView({ rows, sprints }) {
                   <td className="px-3 py-2.5">
                     <StatusBadge ratio={ratio} />
                   </td>
-                  {showNotes      && <td className="px-3 py-2.5 text-gray-500 text-xs max-w-48 truncate">{row.notes || '—'}</td>}
                 </tr>
               );
             })}
@@ -178,7 +175,6 @@ export default function SprintDetailView({ rows, sprints }) {
               <td className="px-3 py-2.5">
                 <StatusBadge ratio={overallRatio} />
               </td>
-              {showNotes      && <td />}
             </tr>
           </tfoot>
         </table>
