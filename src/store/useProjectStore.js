@@ -1,4 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
+import {
+  fetchAllProjects,
+  saveProjectToApi,
+  clearProjectFromApi,
+  saveProjectNamesToApi,
+} from '../api/projectsApi';
 
 const DEFAULT_PROJECTS = [
   { id: 'project1', name: 'MH-Website' },
@@ -9,65 +15,44 @@ const DEFAULT_PROJECTS = [
 
 const STORAGE_KEY = 'mag-dashboard-v1';
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
 const initialProjectState = () => ({
-  fileName: null,
-  rows: [],
-  sprints: [],
-  members: [],
+  fileName:        null,
+  rows:            [],
+  sprints:         [],
+  members:         [],
   selectedSprints: [],
-  error: null,
-  loading: false,
+  error:           null,
+  loading:         false,
 });
 
-/** Read persisted state from localStorage. Returns null if nothing saved. */
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-/** Write only the fields we want to persist (skip transient loading/error). */
 function saveToStorage(projectNames, projectData) {
   try {
-    const payload = {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
       projectNames,
       projectData: Object.fromEntries(
-        Object.entries(projectData).map(([id, d]) => [
-          id,
-          {
-            fileName:        d.fileName,
-            rows:            d.rows,
-            sprints:         d.sprints,
-            members:         d.members,
-            selectedSprints: d.selectedSprints,
-          },
-        ])
+        Object.entries(projectData).map(([id, d]) => [id, {
+          fileName:        d.fileName,
+          rows:            d.rows,
+          sprints:         d.sprints,
+          members:         d.members,
+          selectedSprints: d.selectedSprints,
+        }])
       ),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch (err) {
-    // localStorage can be full or disabled — fail silently
-    console.warn('MAG Dashboard: could not save to localStorage', err);
+    }));
+  } catch {
+    // localStorage may be full or disabled
   }
-}
-
-/** Merge saved state onto the default project state skeleton. */
-function buildInitialData(saved) {
-  return Object.fromEntries(
-    DEFAULT_PROJECTS.map((p) => {
-      const persisted = saved?.projectData?.[p.id];
-      return [
-        p.id,
-        persisted
-          ? { ...initialProjectState(), ...persisted }
-          : initialProjectState(),
-      ];
-    })
-  );
 }
 
 function buildInitialNames(saved) {
@@ -75,26 +60,77 @@ function buildInitialNames(saved) {
   return saved?.projectNames ? { ...defaults, ...saved.projectNames } : defaults;
 }
 
+function buildInitialData(saved) {
+  return Object.fromEntries(
+    DEFAULT_PROJECTS.map((p) => {
+      const persisted = saved?.projectData?.[p.id];
+      return [p.id, persisted ? { ...initialProjectState(), ...persisted } : initialProjectState()];
+    })
+  );
+}
+
+// ─── store ────────────────────────────────────────────────────────────────────
+
 export function useProjectStore() {
-  const saved = loadFromStorage();
+  // 1. Seed from localStorage immediately → instant first render
+  const cached = loadFromStorage();
+  const [projectNames, setProjectNames] = useState(() => buildInitialNames(cached));
+  const [projectData,  setProjectData]  = useState(() => buildInitialData(cached));
+  const [apiReady,     setApiReady]     = useState(false); // true once initial API fetch is done
 
-  const [projectNames, setProjectNames] = useState(() => buildInitialNames(saved));
-  const [projectData,  setProjectData]  = useState(() => buildInitialData(saved));
+  // 2. On mount: fetch from the backend (authoritative source of truth)
+  //    Merge server data on top of the cached state.
+  useEffect(() => {
+    fetchAllProjects().then((result) => {
+      if (!result) return; // API unavailable → keep localStorage data
 
-  // Persist to localStorage whenever state changes
+      setProjectData((prev) => {
+        const merged = { ...prev };
+        DEFAULT_PROJECTS.forEach(({ id }) => {
+          if (result[id]) {
+            merged[id] = { ...initialProjectState(), ...result[id] };
+          }
+        });
+        return merged;
+      });
+
+      if (result._names) {
+        setProjectNames((prev) => ({ ...prev, ...result._names }));
+      }
+    }).finally(() => setApiReady(true));
+  }, []);
+
+  // 3. Keep localStorage in sync whenever state changes
   useEffect(() => {
     saveToStorage(projectNames, projectData);
   }, [projectNames, projectData]);
 
+  // ─── actions ──────────────────────────────────────────────────────────────
+
   const updateProject = useCallback((projectId, patch) => {
-    setProjectData((prev) => ({
-      ...prev,
-      [projectId]: { ...prev[projectId], ...patch },
-    }));
+    setProjectData((prev) => {
+      const updated = { ...prev, [projectId]: { ...prev[projectId], ...patch } };
+      const next = updated[projectId];
+
+      // Sync to backend:
+      // • New file uploaded (rows present) → save
+      // • File removed (fileName null, rows empty) → delete
+      if (patch.rows?.length > 0) {
+        saveProjectToApi(projectId, next);
+      } else if (patch.fileName === null && Array.isArray(patch.rows) && patch.rows.length === 0) {
+        clearProjectFromApi(projectId);
+      }
+
+      return updated;
+    });
   }, []);
 
   const renameProject = useCallback((projectId, name) => {
-    setProjectNames((prev) => ({ ...prev, [projectId]: name }));
+    setProjectNames((prev) => {
+      const updated = { ...prev, [projectId]: name };
+      saveProjectNamesToApi(updated);
+      return updated;
+    });
   }, []);
 
   const projects = DEFAULT_PROJECTS.map((p) => ({
@@ -103,5 +139,5 @@ export function useProjectStore() {
     data: projectData[p.id],
   }));
 
-  return { projects, updateProject, renameProject };
+  return { projects, updateProject, renameProject, apiReady };
 }

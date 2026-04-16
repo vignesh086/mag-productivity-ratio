@@ -61,7 +61,7 @@ function EditableName({ name, onSave }) {
 }
 
 export default function App() {
-  const { projects, updateProject, renameProject } = useProjectStore();
+  const { projects, updateProject, renameProject, apiReady } = useProjectStore();
   const [activeTab, setActiveTab] = useState(1); // default to Project 1
 
   const dataCount = projects.filter((p) => p.data.rows.length > 0).length;
@@ -82,11 +82,16 @@ export default function App() {
               Original Estimate ÷ Available Capacity
             </p>
           </div>
-          {dataCount > 0 && (
-            <span className="ml-auto text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-              {dataCount} / 3 projects loaded
-            </span>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {!apiReady && (
+              <span className="text-xs text-blue-500 animate-pulse">Syncing…</span>
+            )}
+            {dataCount > 0 && (
+              <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                {dataCount} / 4 projects loaded
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Tab bar */}
