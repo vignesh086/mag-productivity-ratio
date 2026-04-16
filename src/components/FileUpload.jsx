@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
-import { Upload, FileSpreadsheet, X, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { parseProductivityExcel, extractSprints, extractMembers } from '../utils/excelParser';
 
 export default function FileUpload({ projectId, projectData, onUpdate }) {
-  const inputRef = useRef(null);
+  const inputRef      = useRef(null);
+  const replaceRef    = useRef(null);
   const [dragging, setDragging] = useState(false);
 
   const processFile = async (file) => {
@@ -22,28 +23,21 @@ export default function FileUpload({ projectId, projectData, onUpdate }) {
     onUpdate(projectId, { loading: true, error: null });
 
     try {
-      const rows = await parseProductivityExcel(file);
+      const rows    = await parseProductivityExcel(file);
       const sprints = extractSprints(rows);
       const members = extractMembers(rows);
       onUpdate(projectId, {
-        fileName: file.name,
+        fileName:        file.name,
         rows,
         sprints,
         members,
         selectedSprints: [],
-        loading: false,
-        error: null,
+        loading:         false,
+        error:           null,
       });
     } catch (err) {
       onUpdate(projectId, { loading: false, error: err.message });
     }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files[0];
-    processFile(file);
   };
 
   const handleChange = (e) => {
@@ -52,36 +46,83 @@ export default function FileUpload({ projectId, projectData, onUpdate }) {
     e.target.value = '';
   };
 
+  const handleReplaceChange = (e) => {
+    const file = e.target.files[0];
+    processFile(file);
+    e.target.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    processFile(e.dataTransfer.files[0]);
+  };
+
   const clearFile = () => {
     onUpdate(projectId, {
-      fileName: null,
-      rows: [],
-      sprints: [],
-      members: [],
+      fileName:        null,
+      rows:            [],
+      sprints:         [],
+      members:         [],
       selectedSprints: [],
-      error: null,
-      loading: false,
+      error:           null,
+      loading:         false,
     });
   };
 
   const { fileName, loading, error } = projectData;
 
+  // ── File already loaded ──────────────────────────────────────────────────────
   if (fileName) {
     return (
-      <div className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
-        <FileSpreadsheet className="text-green-600 shrink-0" size={20} />
-        <span className="text-sm text-green-800 font-medium flex-1 truncate">{fileName}</span>
-        <button
-          onClick={clearFile}
-          className="text-green-600 hover:text-green-800 transition-colors"
-          title="Remove file"
-        >
-          <X size={16} />
-        </button>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
+          <FileSpreadsheet className="text-green-600 shrink-0" size={18} />
+          <span className="text-sm text-green-800 font-medium flex-1 truncate">{fileName}</span>
+
+          {/* Replace – overwrites without removing first */}
+          <button
+            onClick={() => replaceRef.current?.click()}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-green-300 text-green-700 hover:bg-green-100 transition-colors"
+            title="Replace with a new file"
+          >
+            <RefreshCw size={12} />
+            Replace
+          </button>
+
+          {/* Remove */}
+          <button
+            onClick={clearFile}
+            className="p-1 text-green-500 hover:text-red-600 transition-colors rounded"
+            title="Remove file"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        {loading && (
+          <p className="text-xs text-gray-500 animate-pulse px-1">Parsing new file…</p>
+        )}
+
+        {error && (
+          <div className="flex gap-2 items-start p-3 bg-red-50 border border-red-200 rounded-lg">
+            <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-red-700 whitespace-pre-line">{error}</p>
+          </div>
+        )}
+
+        <input
+          ref={replaceRef}
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          className="hidden"
+          onChange={handleReplaceChange}
+        />
       </div>
     );
   }
 
+  // ── No file yet ──────────────────────────────────────────────────────────────
   return (
     <div className="space-y-2">
       <div
@@ -104,7 +145,7 @@ export default function FileUpload({ projectId, projectData, onUpdate }) {
             <p className="text-sm text-gray-600 text-center">
               <span className="font-medium text-blue-600">Click to upload</span> or drag &amp; drop
             </p>
-            <p className="text-xs text-gray-400">.xlsx, .xls, .csv</p>
+            <p className="text-xs text-gray-400">.xlsx, .xls</p>
           </>
         )}
       </div>
