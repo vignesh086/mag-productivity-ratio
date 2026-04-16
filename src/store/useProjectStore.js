@@ -1,33 +1,30 @@
 import { useState, useCallback } from 'react';
 
-const PROJECTS = [
-  { id: 'project1', name: 'Project 1' },
-  { id: 'project2', name: 'Project 2' },
-  { id: 'project3', name: 'Project 3' },
+const DEFAULT_PROJECTS = [
+  { id: 'project1', name: 'MH-Website' },
+  { id: 'project2', name: 'MH-Voucher' },
+  { id: 'project3', name: 'DSP' },
+  { id: 'project4', name: 'DSP SSCI' },
 ];
 
 const initialProjectState = () => ({
   fileName: null,
-  rows: [],          // parsed Excel rows
-  sprints: [],       // unique sorted sprints
-  members: [],       // unique sorted members
+  rows: [],           // parsed Excel rows
+  sprints: [],        // unique sprints (in sheet order)
+  members: [],        // unique sorted members
   selectedSprints: [], // user-selected sprint filter (empty = all)
   error: null,
   loading: false,
 });
 
 export function useProjectStore() {
-  const [projectNames, setProjectNames] = useState({
-    project1: 'Project 1',
-    project2: 'Project 2',
-    project3: 'Project 3',
-  });
+  const [projectNames, setProjectNames] = useState(
+    Object.fromEntries(DEFAULT_PROJECTS.map((p) => [p.id, p.name]))
+  );
 
-  const [projectData, setProjectData] = useState({
-    project1: initialProjectState(),
-    project2: initialProjectState(),
-    project3: initialProjectState(),
-  });
+  const [projectData, setProjectData] = useState(
+    Object.fromEntries(DEFAULT_PROJECTS.map((p) => [p.id, initialProjectState()]))
+  );
 
   const updateProject = useCallback((projectId, patch) => {
     setProjectData((prev) => ({
@@ -40,7 +37,7 @@ export function useProjectStore() {
     setProjectNames((prev) => ({ ...prev, [projectId]: name }));
   }, []);
 
-  const projects = PROJECTS.map((p) => ({
+  const projects = DEFAULT_PROJECTS.map((p) => ({
     ...p,
     name: projectNames[p.id],
     data: projectData[p.id],

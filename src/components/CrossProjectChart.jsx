@@ -3,7 +3,7 @@ import {
   Legend, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;

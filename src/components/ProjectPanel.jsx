@@ -69,10 +69,19 @@ export default function ProjectPanel({ project, onUpdate }) {
       {!hasData && (
         <div className="flex gap-2 items-start p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <Info size={15} className="text-blue-500 shrink-0 mt-0.5" />
-          <div className="text-xs text-blue-700 space-y-1">
+          <div className="text-xs text-blue-700 space-y-1.5">
             <p className="font-medium">Expected Excel format:</p>
-            <p>Columns: <code className="bg-blue-100 px-1 rounded">Member</code> | <code className="bg-blue-100 px-1 rounded">Sprint</code> | <code className="bg-blue-100 px-1 rounded">Original Estimate</code> | <code className="bg-blue-100 px-1 rounded">Available Capacity</code></p>
-            <p className="text-blue-600">Values in hours. One row per member per sprint.</p>
+            <p>Each <span className="font-semibold">sheet tab = one sprint</span> (the tab name becomes the sprint label).</p>
+            <p>Required columns:</p>
+            <p>
+              <code className="bg-blue-100 px-1 rounded">Team Member</code>{' '}
+              <code className="bg-blue-100 px-1 rounded">Role</code>{' '}
+              <code className="bg-blue-100 px-1 rounded">Total Hours Available</code>{' '}
+              <code className="bg-blue-100 px-1 rounded">Total Hours Committed /Total Original Estimate</code>
+            </p>
+            <p className="text-blue-600">
+              Optional: Total Days in Sprint · Vacation/PTO · Other Meetings · Focus Factor (%) · Effective Days · Hours/Day · MH Website (%) · Project · Notes
+            </p>
           </div>
         </div>
       )}
