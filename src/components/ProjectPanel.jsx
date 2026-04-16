@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { BarChart2, TrendingUp, Users, Info } from 'lucide-react';
+import { BarChart2, TrendingUp, Users, Info, TableProperties } from 'lucide-react';
 import FileUpload from './FileUpload';
 import SprintFilter from './SprintFilter';
 import StatCard from './StatCard';
@@ -7,6 +7,7 @@ import MemberTable from './MemberTable';
 import MemberBarChart from './MemberBarChart';
 import TrendChart from './TrendChart';
 import AnalysisSummary from './AnalysisSummary';
+import SprintDetailView from './SprintDetailView';
 import {
   computeMemberStats,
   computeSprintTrend,
@@ -14,6 +15,7 @@ import {
 } from '../utils/excelParser';
 
 const VIEWS = [
+  { id: 'sprint', label: 'Sprint Detail', icon: TableProperties },
   { id: 'overview', label: 'Overview', icon: BarChart2 },
   { id: 'trend', label: 'Sprint Trend', icon: TrendingUp },
   { id: 'members', label: 'Member Breakdown', icon: Users },
@@ -29,7 +31,7 @@ export default function ProjectPanel({ project, onUpdate }) {
   const { id, data } = project;
   const { rows, sprints, members, selectedSprints, fileName } = data;
 
-  const [activeView, setActiveView] = useState('overview');
+  const [activeView, setActiveView] = useState('sprint');
   const [chartTab, setChartTab] = useState('overall');
 
   const filteredRows = useMemo(() => {
@@ -88,14 +90,16 @@ export default function ProjectPanel({ project, onUpdate }) {
 
       {hasData && (
         <>
-          {/* Sprint filter */}
-          <div>
-            <SprintFilter
-              sprints={sprints}
-              selectedSprints={selectedSprints}
-              onChange={(val) => onUpdate(id, { selectedSprints: val })}
-            />
-          </div>
+          {/* Sprint filter – shown on all views except Sprint Detail (which has its own navigator) */}
+          {activeView !== 'sprint' && (
+            <div>
+              <SprintFilter
+                sprints={sprints}
+                selectedSprints={selectedSprints}
+                onChange={(val) => onUpdate(id, { selectedSprints: val })}
+              />
+            </div>
+          )}
 
           {/* View tabs */}
           <div className="flex gap-1 border-b border-gray-200">
@@ -113,6 +117,11 @@ export default function ProjectPanel({ project, onUpdate }) {
               </button>
             ))}
           </div>
+
+          {/* SPRINT DETAIL */}
+          {activeView === 'sprint' && (
+            <SprintDetailView rows={rows} sprints={sprints} />
+          )}
 
           {/* OVERVIEW */}
           {activeView === 'overview' && (

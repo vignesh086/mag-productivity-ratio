@@ -20,7 +20,8 @@ import * as XLSX from 'xlsx';
  *
  * Returns an array of row objects:
  *   { member, role, sprint, originalEstimate, availableCapacity,
- *     focusFactor, effectiveDays, projectName, notes, projectAllocPct }
+ *     totalDays, pto, otherMeetings, focusFactor, effectiveDays,
+ *     hoursPerDay, projectName, notes, projectAllocPct }
  */
 export function parseProductivityExcel(file) {
   return new Promise((resolve, reject) => {
@@ -65,12 +66,16 @@ export function parseProductivityExcel(file) {
             find('total hours committed') || find('total original estimate');
 
           // Optional metadata columns
+          const COL_TOTAL_DAYS = find('total days');
+          const COL_PTO        = find('vacation') || find('annual leave') || find('pto');
+          const COL_MEETINGS   = find('other meetings') || find('duties');
           const COL_FOCUS      = find('focus factor');
           const COL_EFF_DAYS   = find('effective days');
+          const COL_HRS_DAY    = find('hours/day') || find('hrs/day');
           const COL_PROJECT    = find('project');
           const COL_NOTES      = find('notes');
-          // Project allocation % – e.g. "MH Website (%)"
-          const COL_ALLOC      = find('(%)') || find('website');
+          // Project allocation % – e.g. "MH Website (%)" — avoid matching "Focus Factor (%)"
+          const COL_ALLOC      = find('website') || find('voucher') || find('dsp');
 
           const missing = [];
           if (!COL_MEMBER)   missing.push('Team Member');
@@ -101,15 +106,19 @@ export function parseProductivityExcel(file) {
 
             allRows.push({
               member,
-              sprint: sheetName.trim(),
-              role:            COL_ROLE      ? String(r[COL_ROLE] || '').trim()       : '',
+              sprint:          sheetName.trim(),
+              role:            COL_ROLE       ? String(r[COL_ROLE] || '').trim()        : '',
               originalEstimate,
               availableCapacity,
-              focusFactor:     COL_FOCUS     ? parseFloat(r[COL_FOCUS]) || null       : null,
-              effectiveDays:   COL_EFF_DAYS  ? parseFloat(r[COL_EFF_DAYS]) || null    : null,
-              projectName:     COL_PROJECT   ? String(r[COL_PROJECT] || '').trim()    : '',
-              notes:           COL_NOTES     ? String(r[COL_NOTES] || '').trim()      : '',
-              projectAllocPct: COL_ALLOC     ? parseFloat(r[COL_ALLOC]) || null       : null,
+              totalDays:       COL_TOTAL_DAYS ? parseFloat(r[COL_TOTAL_DAYS]) || null   : null,
+              pto:             COL_PTO        ? parseFloat(r[COL_PTO]) || null           : null,
+              otherMeetings:   COL_MEETINGS   ? parseFloat(r[COL_MEETINGS]) || null      : null,
+              focusFactor:     COL_FOCUS      ? parseFloat(r[COL_FOCUS]) || null         : null,
+              effectiveDays:   COL_EFF_DAYS   ? parseFloat(r[COL_EFF_DAYS]) || null      : null,
+              hoursPerDay:     COL_HRS_DAY    ? parseFloat(r[COL_HRS_DAY]) || null       : null,
+              projectName:     COL_PROJECT    ? String(r[COL_PROJECT] || '').trim()      : '',
+              notes:           COL_NOTES      ? String(r[COL_NOTES] || '').trim()        : '',
+              projectAllocPct: COL_ALLOC      ? parseFloat(r[COL_ALLOC]) || null         : null,
             });
           }
         }
